@@ -3,7 +3,7 @@ GitHub: https://github.com/xyz8848/KLPBBS_auto_sign_in
 Gitee: https://gitee.com/xyz8848/KLPBBS_auto_sign_in
 
 cron:0 6 * * *
-new Env("klp")
+new Env("klp自动签到")
 
 """"
 
