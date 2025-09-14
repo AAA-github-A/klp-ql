@@ -1,6 +1,6 @@
 ## 苦力怕论坛自动签到脚本
 
-原项目 [xyz8848/KLPBBS_auto_sign_in](https://github.com/xyz8848/KLPBBS_auto_sign_in) [xyz8848/KLPBBS_auto_sign_in](https://gitee.com/xyz8848/KLPBBS_auto_sign_in)
+原项目 [Github](https://github.com/xyz8848/KLPBBS_auto_sign_in) [Gitee](https://gitee.com/xyz8848/KLPBBS_auto_sign_in)
 
 # 修改部分
 -不再使用GitHub Action\
