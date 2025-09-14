@@ -252,7 +252,7 @@ def email_notice(msg: str):
     message["From"] = mail_username
     message["To"] = mail_to
     message["Subject"] = msg
-    body = f"<h1>苦力怕论坛自动签到</h1><br><br>{msg}<br><br>Powered by <a href='https://github.com/xyz8848/KLPBBS_auto_sign_in'>https://github.com/xyz8848/KLPBBS_auto_sign_in</a>"
+    body = f"<h1>苦力怕论坛自动签到</h1><br><br>{msg}<br><br>Powered by <a href='https://github.com/AAA-github-A/klp-ql'>https://github.com/AAA-github-A/klp-ql</a>"
     message.attach(MIMEText(body, "html"))
 
     try:
@@ -277,7 +277,7 @@ def wechat_notice(msg: str):
     data = {
         "msgtype": "text",
         "text": {
-            "content": f"苦力怕论坛自动签到\n\n{msg}\n\nPowered by https://github.com/xyz8848/KLPBBS_auto_sign_in",
+            "content": f"苦力怕论坛自动签到\n\n{msg}\n\nPowered by https://github.com/AAA-github-A/klp-ql",
             # 可以在 mentioned_list 中添加 "@all"，提醒所有人查看信息
             "mentioned_list": wechat_mentioned,
         }
@@ -321,7 +321,7 @@ def tg_notice(msg: str):
     url = f"https://api.telegram.org/bot{tg_token}/sendMessage"
     payload = {
         "chat_id": tg_chat_id,
-        "text": f"<b>苦力怕论坛自动签到</b>\n\n{msg}\n\n<a href='https://github.com/xyz8848/KLPBBS_auto_sign_in'>https://github.com/xyz8848/KLPBBS_auto_sign_in</a>",
+        "text": f"<b>苦力怕论坛自动签到</b>\n\n{msg}\n\n<a href='https://github.com/AAA-github-A/klp-ql'>https://github.com/AAA-github-A/klp-ql</a>",
         "parse_mode": "HTML",
         "disable_web_page_preview": True
     }
