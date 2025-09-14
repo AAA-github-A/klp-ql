@@ -1,0 +1,8 @@
+[
+    {
+        "name": "苦力怕论坛签到",
+        "command": "task klp_sign.py",
+        "schedule": "0 10 * * *",
+        "type": "python"
+    }
+]
