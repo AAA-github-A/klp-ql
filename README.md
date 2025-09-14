@@ -18,8 +18,9 @@
 定时规则:0 0 * * *
 ```
 保存后，点击运行按钮，运行拉库。  
+
 拉库成功后会自动添加定时任务。
 
-
+环境变量中添加[USERNAME](/docs/secrets.md#USERNAME)[PASSWORD](/docs/secrets.md#PASSWORD)
 
 [secrets](/docs/secrets.md)
