@@ -7,6 +7,20 @@ new Env("klp自动签到")
 
 """
 
+# ========== 添加依赖检查 ==========
+import os
+import sys
+
+try:
+    import requests
+    from bs4 import BeautifulSoup
+except ImportError:
+    print("检测到缺少依赖，正在自动安装...")
+    os.system(f"{sys.executable} -m pip install requests beautifulsoup4 -i https://pypi.tuna.tsinghua.edu.cn/simple")
+    print("依赖安装完成，请重新运行脚本")
+    sys.exit(1)
+# ========== 依赖检查结束 ==========
+
 import http
 import logging
 import os
