@@ -25,4 +25,4 @@
 
 其余功能使用方法同上，参考[Gitee](https://gitee.com/xyz8848/KLPBBS_auto_sign_in)和[secrets](/docs/secrets.md)
 
-仅签到和Telegram 通知、邮箱通知经过测试，其余部分是否可用未知
+仅签到和Telegram、邮箱通知经过测试，其余部分是否可用未知
