@@ -1,4 +1,5 @@
 # GitHub: https://github.com/xyz8848/KLPBBS_auto_sign_in
+# Gitee: https://gitee.com/xyz8848/KLPBBS_auto_sign_in
 
 import http
 import logging
