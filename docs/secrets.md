@@ -1,5 +1,10 @@
-# [KLPBBS_auto_sign_in](https://github.com/xyz8848/KLPBBS_auto_sign_in)
 ## Secrets
+
+### ACCOUNTS
+  - **描述**：多账号
+  - **必填**：否
+  - **值型**：字符串
+  - **示例**：账号1:密码1;账号2:密码2
 
 ### USERNAME
 - **描述**：苦力怕论坛用户名
