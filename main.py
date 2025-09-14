@@ -1,7 +1,7 @@
-# GitHub: https://github.com/xyz8848/KLPBBS_auto_sign_in
-# Gitee: https://gitee.com/xyz8848/KLPBBS_auto_sign_in
-
 """"
+GitHub: https://github.com/xyz8848/KLPBBS_auto_sign_in
+Gitee: https://gitee.com/xyz8848/KLPBBS_auto_sign_in
+
 cron:0 6 * * *
 new Env("klp")
 
