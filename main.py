@@ -23,18 +23,33 @@ except ImportError:
 
 import http
 import logging
-import os
 import smtplib
-import sys
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from http import cookiejar
 
-import requests
-from bs4 import BeautifulSoup
-
+# 多账号配置
+# 支持两种配置方式：
+# 1. USERNAME/PASSWORD（单账号）
+# 2. ACCOUNTS（多账号，格式：账号1:密码1;账号2:密码2）
+accounts = []
 username = os.environ.get("USERNAME")
 password = os.environ.get("PASSWORD")
+
+if username and password:
+    accounts.append({"username": username, "password": password})
+
+accounts_str = os.environ.get("ACCOUNTS", "")
+if accounts_str:
+    account_pairs = accounts_str.split(';')
+    for pair in account_pairs:
+        if ':' in pair:
+            user, pwd = pair.split(':', 1)
+            accounts.append({"username": user.strip(), "password": pwd.strip()})
+
+if not accounts:
+    logging.error("未配置任何账号，请设置 USERNAME/PASSWORD 或 ACCOUNTS 环境变量")
+    exit(1)
 
 switch_user = int(os.environ.get("SWITCH_USER") or 0)
 renewal_vip = int(os.environ.get("RENEWAL_VIP") or 0)
@@ -47,11 +62,11 @@ mail_host = os.environ.get("MAIL_HOST")
 mail_port = int(os.environ.get("MAIL_PORT") or 0)
 mail_username = os.environ.get("MAIL_USERNAME")
 mail_password = os.environ.get("MAIL_PASSWORD")
-mail_to = os.environ.get("MAIL_TO") or []
+mail_to = os.environ.get("MAIL_TO") or ""
 
 wechat_enable = int(os.environ.get("WECHAT_ENABLE") or 0)
 wechat_webhook = os.environ.get("WECHAT_WEBHOOK")
-wechat_mentioned = os.environ.get("WECHAT_MENTIONED") or []
+wechat_mentioned = os.environ.get("WECHAT_MENTIONED") or ""
 
 serverchan_enable = int(os.environ.get("SERVERCHAN_ENABLE") or 0)
 serverchan_key = os.environ.get("SERVERCHAN_KEY")
@@ -81,154 +96,76 @@ else:
 
 userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.81"
 
-header = {
-    "origin": "https://klpbbs.com",
-    "Referer": "https://klpbbs.com/",
-    "User-Agent": userAgent,
-}
-
-session = requests.session()
-session.cookies = http.cookiejar.LWPCookieJar()
-
 
 def login(username: str, password: str):
-    """
-    登录苦力怕论坛
+    """登录苦力怕论坛"""
+    session = requests.session()
+    session.cookies = http.cookiejar.LWPCookieJar()
 
-    Args:
-        username: 苦力怕论坛用户名
-        password: 苦力怕论坛密码
-    """
-    post_url = "https://klpbbs.com/member.php?mod=logging&action=login&loginsubmit=yes"
-    post_data = {
-        "username": username,
-        "password": password,
+    header = {
+        "origin": "https://klpbbs.com",
+        "Referer": "https://klpbbs.com/",
+        "User-Agent": userAgent,
     }
+
+    post_url = "https://klpbbs.com/member.php?mod=logging&action=login&loginsubmit=yes"
+    post_data = {"username": username, "password": password}
 
     response_res = session.post(post_url, data=post_data, headers=header)
     logging.debug(f"statusCode = {response_res.status_code}")
-    logging.debug(
-        f"https://klpbbs.com/member.php?mod=logging&action=login&loginsubmit=yes = {response_res.text}"
-    )
 
     header["Cookie"] = "; ".join(
         [f"{cookie.name}={cookie.value}" for cookie in session.cookies]
     )
-    # logging.debug(f'Header: {header}')
-
-    # soup = BeautifulSoup(response_res.text, 'html.parser')
-    # a_tag = soup.find('a', href_='https://klpbbs.com/')
-    # if a_tag is not None:
-    #     logging.info('登录成功')
-    # else:
-    #     logging.info('登录失败')
-    #     exit(1)
+    return session, header
 
 
-def get_url():
-    """
-    获取签到链接
-
-    Returns:
-        签到链接 (sign_in_url)
-    """
-    html_source = session.get("https://klpbbs.com/")
-    logging.debug(html_source.text)
+def get_url(session, header):
+    """获取签到链接"""
+    html_source = session.get("https://klpbbs.com/", headers=header)
     soup = BeautifulSoup(html_source.text, "html.parser")
+    
+    # 检查是否已签到
+    signed_tag = soup.find("a", class_="midaben_signpanel JD_sign visted")
+    if signed_tag is not None and signed_tag.get("href") == "k_misign-sign.html":
+        logging.info("今日已签到")
+        return "already_signed"
+    
+    # 查找签到链接
     a_tag = soup.find("a", class_="midaben_signpanel JD_sign")
     if a_tag is not None:
         href_value = a_tag["href"]
         sign_in_url = "https://klpbbs.com/" + href_value
-
         logging.debug(f"签到链接：{sign_in_url}")
 
         if sign_in_url == "https://klpbbs.com/member.php?mod=logging&action=login":
             logging.info("签到链接异常（原因：登录失败）")
-            exit(1)
-
+            return None
         logging.info("已成功获取签到链接")
-
         return sign_in_url
-    else:
-        is_sign_in()
-        return None
+    return None
 
 
-def sign_in(sign_in_url: str):
-    """
-    签到
-
-    Args:
-        sign_in_url: 签到链接
-    """
-    session.get(sign_in_url, headers=header)
+def sign_in(sign_in_url: str, session, header):
+    """签到"""
+    if sign_in_url and sign_in_url != "already_signed":
+        session.get(sign_in_url, headers=header)
 
 
-def is_sign_in():
-    """
-    检测是否签到成功
-    """
-    html_source = session.get("https://klpbbs.com/")
-    logging.debug(f"https://klpbbs.com/ = {html_source.text}")
+def is_sign_in(session, header):
+    """检测是否签到成功"""
+    html_source = session.get("https://klpbbs.com/", headers=header)
     soup = BeautifulSoup(html_source.text, "html.parser")
     a_tag = soup.find("a", class_="midaben_signpanel JD_sign visted")
-    if a_tag is not None:
-        href_value = a_tag["href"]
-        if href_value == "k_misign-sign.html":
-            logging.info("已成功签到")
-            notice("已成功签到！")
-            exit(0)
-        else:  # 异常处理
-            # 用户组到期处理
-            div_tag = soup.find("div", class_="notice")
-            if (
-                div_tag
-                == "您当前的用户组已经到期，请选择继续续费还是要切换到其他用户组"
-            ):
-                if switch_user == 1:
-                    session.get(
-                        "https://klpbbs.com/home.php?mod=spacecp&ac=usergroup&do=switch&groupid=10&handlekey=switchgrouphk",
-                        headers=header,
-                    )
-                    logging.info("已切换回普通用户组")
-                    notice("已切换回普通用户组")
-                elif renewal_vip == 1:
-                    session.get(
-                        "https://klpbbs.com/home.php?mod=spacecp&ac=usergroup&do=buy&groupid=21&inajax=1",
-                        headers=header,
-                    )
-                    logging.info("已续费VIP")
-                    notice("已续费VIP")
-                    os.execl(sys.executable, sys.executable, *sys.argv)
-                elif renewal_svip == 1:
-                    session.get(
-                        "https://klpbbs.com/home.php?mod=spacecp&ac=usergroup&do=buy&groupid=22&inajax=1",
-                        headers=header,
-                    )
-                    logging.info("已续费SVIP")
-                    notice("已续费SVIP")
-                    os.execl(sys.executable, sys.executable, *sys.argv)
-                else:
-                    logging.info(f"签到失败（原因：当前用户组已到期）")
-                    notice("签到失败（原因：当前用户组已到期）")
-                    exit(1)
-
-            logging.info("签到失败")
-            notice("签到失败")
-            exit(1)
-    else:
-        logging.info("签到失败")
-        notice("签到失败")
-        exit(1)
+    if a_tag is not None and a_tag.get("href") == "k_misign-sign.html":
+        logging.info("已成功签到")
+        return True
+    logging.info("签到失败")
+    return False
 
 
 def notice(msg: str):
-    """
-    签到后提示
-
-    Args:
-        msg: 提示信息
-    """
+    """签到后提示"""
     if mail_enable == 1:
         email_notice(msg)
     if wechat_enable == 1:
@@ -242,17 +179,12 @@ def notice(msg: str):
 
 
 def email_notice(msg: str):
-    """
-    签到后邮件提示
-
-    Args:
-        msg: 提示信息
-    """
+    """邮件通知"""
     message = MIMEMultipart()
     message["From"] = mail_username
     message["To"] = mail_to
-    message["Subject"] = msg
-    body = f"<h1>苦力怕论坛自动签到</h1><br><br>{msg}<br><br>Powered by <a href='https://github.com/AAA-github-A/klp-ql'>https://github.com/AAA-github-A/klp-ql</a>"
+    message["Subject"] = "苦力怕论坛签到通知"
+    body = f"<h1>苦力怕论坛自动签到</h1><br><br>{msg}<br><br>Powered by <a href='https://github.com/AAA-github-A/klp-ql'>项目地址</a>"
     message.attach(MIMEText(body, "html"))
 
     try:
@@ -267,26 +199,15 @@ def email_notice(msg: str):
 
 
 def wechat_notice(msg: str):
-    """
-    签到后企业微信通知
-
-    Args:
-        msg: 提示信息
-    """
-    # 构建消息体
+    """企业微信通知"""
     data = {
         "msgtype": "text",
         "text": {
             "content": f"苦力怕论坛自动签到\n\n{msg}\n\nPowered by https://github.com/AAA-github-A/klp-ql",
-            # 可以在 mentioned_list 中添加 "@all"，提醒所有人查看信息
             "mentioned_list": wechat_mentioned,
         }
     }
-
-    # 发送 POST 请求
     response = requests.post(wechat_webhook, json=data)
-
-    # 检查响应状态码
     if response.status_code == 200:
         logging.info("企业微信通知发送成功")
     else:
@@ -294,14 +215,9 @@ def wechat_notice(msg: str):
 
 
 def serverchan_notice(msg: str):
-    """
-    签到后Server酱通知
-
-    Args:
-        msg: 提示信息
-    """
+    """Server酱通知"""
     url = f"https://sctapi.ftqq.com/{serverchan_key}.send"
-    data = {"title": "苦力怕论坛"+msg, "desp": msg}
+    data = {"title": "苦力怕论坛签到通知", "desp": msg}
     try:
         response = requests.post(url, data=data)
         logging.debug(response.text)
@@ -312,16 +228,11 @@ def serverchan_notice(msg: str):
 
 
 def tg_notice(msg: str):
-    """
-    签到后 Telegram 通知
-
-    Args:
-        msg: 提示信息
-    """
+    """Telegram通知"""
     url = f"https://api.telegram.org/bot{tg_token}/sendMessage"
     payload = {
         "chat_id": tg_chat_id,
-        "text": f"<b>苦力怕论坛自动签到</b>\n\n{msg}\n\n<a href='https://github.com/AAA-github-A/klp-ql'>https://github.com/AAA-github-A/klp-ql</a>",
+        "text": f"<b>苦力怕论坛自动签到</b>\n\n{msg}\n\n<a href='https://github.com/AAA-github-A/klp-ql'>项目地址</a>",
         "parse_mode": "HTML",
         "disable_web_page_preview": True
     }
@@ -335,26 +246,20 @@ def tg_notice(msg: str):
 
 
 def ntfy_notice(msg: str):
-    """
-    签到后Ntfy通知
-
-    Args:
-        msg: 提示信息
-    """
-    if not ntfy_username == "":
+    """Ntfy通知"""
+    if ntfy_username:
         auth = requests.auth.HTTPBasicAuth(ntfy_username, ntfy_password)
-    if not ntfy_token == "":
+    elif ntfy_token:
         auth = requests.auth.HTTPBasicAuth("", ntfy_token)
     else:
-        logging.error("ntfy 认证信息异常")
+        auth = None
 
     corrected_url = normalize_domain(ntfy_url)
     url = f"{corrected_url}{ntfy_topic}"
-    data = msg.encode("utf-8")
-
-    headers = {"Title": "苦力怕论坛自动签到".encode("utf-8")}
+    full_msg = f"{msg}\n\nPowered by https://github.com/AAA-github-A/klp-ql"
+    headers = {"Title": "苦力怕论坛自动签到通知"}
     try:
-        response = requests.post(url, data=data, headers=headers, auth=auth)
+        response = requests.post(url, data=full_msg.encode("utf-8"), headers=headers, auth=auth)
         logging.debug(response.text)
         logging.info("Ntfy消息发送成功")
     except requests.RequestException as error:
@@ -363,33 +268,46 @@ def ntfy_notice(msg: str):
 
 
 def normalize_domain(domain: str):
-    """
-    域名规范化
-
-    Args:
-        domain: 域名
-
-    Returns:
-        normalize_domain: 规范化的域名
-    """
-    if not domain.startswith(("http://", "https://")):
+    """域名规范化"""
+    if not domain.startswith("http://") and not domain.startswith("https://"):
         domain = "https://" + domain
-    parts = domain.split("/", 3)
-    normalize_domain = (
-        parts[0] + "//" + parts[2] + "/"
-        if len(parts) > 2
-        else parts[0] + "//" + parts[2]
-    )
-    return normalize_domain
+    return domain.rstrip("/") + "/"
 
 
 if __name__ == "__main__":
-    logging.debug(f"UserAgent: {userAgent}")
+    logging.info(f"开始执行苦力怕论坛多账号签到，共 {len(accounts)} 个账号")
+    results = []
 
-    login(username, password)
+    for account in accounts:
+        username = account["username"]
+        password = account["password"]
+        logging.info(f"开始处理账号: {username}")
 
-    url = get_url()
+        try:
+            session, header = login(username, password)
+            url = get_url(session, header)
+            
+            if url == "already_signed":
+                results.append(f"账号 {username}: 今日已签到")
+            elif url:
+                sign_in(url, session, header)
+                success = is_sign_in(session, header)
+                if success:
+                    results.append(f"账号 {username}: 签到成功")
+                else:
+                    results.append(f"账号 {username}: 签到失败")
+            else:
+                results.append(f"账号 {username}: 获取签到链接失败")
+        except Exception as e:
+            error_msg = f"账号 {username} 出错: {str(e)}"
+            logging.error(error_msg)
+            results.append(error_msg)
 
-    sign_in(url)
-
-    is_sign_in()
+    summary = "\n".join(results)
+    logging.info(f"签到汇总:\n{summary}")
+    
+    # 只在最后发送一次汇总通知
+    if results:
+        notice(f"苦力怕论坛签到完成！\n\n{summary}")
+        
+    logging.info("所有账号处理完毕")
