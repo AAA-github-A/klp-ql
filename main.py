@@ -187,7 +187,6 @@ def email_notice(msg: str):
     
     msg_html = msg.replace('\n', '<br>')
 
-    # 这里的链接已更新为 A-cookie-A
     body = f"<h1>苦力怕论坛自动签到</h1>{msg_html}<br><br>Powered by <a href='https://github.com/A-cookie-A/klp-ql'>项目地址</a>"
     message.attach(MIMEText(body, "html"))
 
@@ -237,7 +236,6 @@ def tg_notice(msg: str):
     url = f"https://api.telegram.org/bot{tg_token}/sendMessage"
     payload = {
         "chat_id": tg_chat_id,
-        # 这里的链接已更新为 A-cookie-A
         "text": f"<b>苦力怕论坛自动签到</b>\n\n{msg}\n\n<a href='https://github.com/A-cookie-A/klp-ql'>项目地址</a>",
         "parse_mode": "HTML",
         "disable_web_page_preview": True
@@ -262,7 +260,6 @@ def ntfy_notice(msg: str):
 
     corrected_url = normalize_domain(ntfy_url)
     url = f"{corrected_url}{ntfy_topic}"
-    # 这里的链接已更新为 A-cookie-A
     full_msg = f"{msg}\n\nPowered by https://github.com/A-cookie-A/klp-ql"
     headers = {"Title": "苦力怕论坛自动签到通知"}
     try:
