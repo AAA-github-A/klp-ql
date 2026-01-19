@@ -184,18 +184,21 @@ def email_notice(msg: str):
     message["From"] = mail_username
     message["To"] = mail_to
     message["Subject"] = "苦力怕论坛签到通知"
-    body = f"<h1>苦力怕论坛自动签到</h1><br><br>{msg}<br><br>Powered by <a href='https://github.com/AAA-github-A/klp-ql'>项目地址</a>"
+    
+    msg_html = msg.replace('\n', '<br>')
+
+    body = f"<h1>苦力怕论坛自动签到</h1>{msg_html}<br><br>Powered by <a href='https://github.com/AAA-github-A/klp-ql'>项目地址</a>"
     message.attach(MIMEText(body, "html"))
 
-    try:
-        server = smtplib.SMTP(mail_host, mail_port)
-        server.starttls()
-        server.login(mail_username, mail_password)
-        server.send_message(message)
-        logging.info("邮件发送成功")
-    except smtplib.SMTPException as error:
-        logging.info("邮件发送失败")
-        logging.error(error)
+try:
+    server = smtplib.SMTP(mail_host, mail_port)
+    server.starttls()
+    server.login(mail_username, mail_password)
+    server.send_message(message)
+    logging.info("邮件发送成功")
+except smtplib.SMTPException as error:
+    logging.info("邮件发送失败")
+    logging.error(error)
 
 
 def wechat_notice(msg: str):
