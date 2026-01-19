@@ -76,7 +76,7 @@
 - **描述**：用于接收通知的邮箱
 - **必填**：否
 - **值型**：列表
-- **示例**：`['admin@example.com']`，`['admin1@example.com', 'admin2@example.com']`
+- **示例**：`[admin@example.com]`，`[admin1@example.com,admin2@example.com]`
 
 ### WECHAT_ENABLE
 - **描述**：签到后微信推送（0=关闭，1=开启）
