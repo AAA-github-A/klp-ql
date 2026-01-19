@@ -13,7 +13,7 @@
 ```
 名称:随意  
 类型:公开仓库  
-链接:https://github.com/AAA-github-A/klp-ql.git  
+链接:https://github.com/A-cookie-A/klp-ql.git  
 定时类型:crontab  
 定时规则:0 0 * * *
 ```
