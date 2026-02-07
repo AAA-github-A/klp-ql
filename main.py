@@ -312,6 +312,6 @@ if __name__ == "__main__":
     
     # 只在最后发送一次汇总通知
     if results:
-        notice(f"苦力怕论坛签到完成！\n\n{summary}")
+        notice(f"苦力怕论坛签到任务完成！\n\n{summary}")
         
     logging.info("所有账号处理完毕")
