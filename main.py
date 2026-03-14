@@ -206,7 +206,6 @@ def wechat_notice(msg: str):
     data = {
         "msgtype": "text",
         "text": {
-            # 这里的链接已更新为 A-cookie-A
             "content": f"苦力怕论坛自动签到\n\n{msg}\n\nPowered by https://github.com/A-cookie-A/klp-ql",
             "mentioned_list": wechat_mentioned,
         }
